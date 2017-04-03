@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 3.5)
 set(sources
     src/bcm2835/bcm2835.c 
     src/motor/motor.cpp 
+    src/I2Cdev/I2Cdev.cpp 
+    src/imu/MPU6050.cpp 
     src/main.cpp 
     )
 
