@@ -7,6 +7,7 @@ set(sources
     src/motor/motor.cpp 
     src/I2Cdev/I2Cdev.cpp 
     src/imu/MPU6050.cpp 
+    src/imu/imu.cpp 
     src/main.cpp 
     )
 
