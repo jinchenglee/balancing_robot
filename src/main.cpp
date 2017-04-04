@@ -44,20 +44,20 @@ int main(int argc, char **argv)
 
     // main loop
     int i=0;
-    for(i=0; i<3; i++)
+    for(i=0; i<5; i++)
     {
         motor_a.forward();
         motor_b.forward();
         sensor.cal_theta();
 
 	// wait a bit
-        delay(50);
+        delay(10);
  
         motor_a.backward();
         motor_b.backward();
  
 	// wait a bit
-	delay(50);
+	delay(10);
     }
 
     motor_a.stop();
