@@ -11,11 +11,11 @@ void motor::init(RPiGPIOPin& pwm, RPiGPIOPin& in1, RPiGPIOPin& in2) {
     IN1 = in1;
     IN2 = in2;
     // Set selected GPIO pins to be output mode
-    bcm2835_gpio_fsel(PWM, BCM2835_GPIO_FSEL_OUTP);
+    // TODO:HACK bcm2835_gpio_fsel(PWM, BCM2835_GPIO_FSEL_OUTP);
     bcm2835_gpio_fsel(IN1, BCM2835_GPIO_FSEL_OUTP);
     bcm2835_gpio_fsel(IN2, BCM2835_GPIO_FSEL_OUTP);
     // Tie PWMA/B to high
-    bcm2835_gpio_write(PWM, HIGH);
+    // TODO:HACK bcm2835_gpio_write(PWM, HIGH);
  }
 
 void motor::forward() {

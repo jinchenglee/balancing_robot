@@ -81,6 +81,7 @@ float imu::cal_theta() {
         prev_theta = theta;
     }
 
+    cout << "degrees = " << theta*180.0/3.1415926 << endl;
     cout << endl;
     return theta;
 }

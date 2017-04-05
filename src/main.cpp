@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <stdio.h>
+#include <cppgpio.hpp>
 
 #include "bcm2835/bcm2835.h"
 #include "motor/motor.h"
@@ -38,14 +39,20 @@ int main(int argc, char **argv)
     // motors init
     motor_a.init(PWMA, AIN1, AIN2);
     motor_b.init(PWMB, BIN1, BIN2);
+    // PWM
+    GPIO::PWMOut pwma(17, 100, 0);
+    GPIO::PWMOut pwmb(13, 100, 0);
 
     // IMU init
     sensor.calibrate();
 
     // main loop
     int i=0;
-    for(i=0; i<5; i++)
+    for(i=0; i<500; i++)
     {
+        int tmp = i%100;
+        pwma.set_ratio(tmp);
+        pwmb.set_ratio(tmp);
         motor_a.forward();
         motor_b.forward();
         sensor.cal_theta();
