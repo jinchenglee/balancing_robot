@@ -1,5 +1,5 @@
 // main.c
- 
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -12,7 +12,7 @@
 #include "motor/motor.h"
 #include "I2Cdev/I2Cdev.h"
 #include "imu/imu.h"
- 
+
 using namespace std;
 
 int main(int argc, char **argv)
@@ -30,8 +30,8 @@ int main(int argc, char **argv)
     RPiGPIOPin BIN1 = RPI_V2_GPIO_P1_33; // GPIO 13 
 
     if (!bcm2835_init())
-	return 1;
- 
+        return 1;
+
     // devices in the system
     motor motor_a, motor_b;
     imu sensor; // The IMU
@@ -46,29 +46,75 @@ int main(int argc, char **argv)
     // IMU init
     sensor.calibrate();
 
+    const float INIT_ANGLE = -0.005;
+    const float SumErrMax = 3;
+    const float SumErrMin = -3;
+    float curErr = 0, prevErr = 0, SumErr = 0;
+    float integralTerm = 0, derivativeTerm = 0;
+    float Kp = 30000.0, Ki = 50000.0, Kd = 500.0;
+    float Cn = 0.0;
+
     // main loop
     int i=0;
     for(i=0; i<500; i++)
     {
-        int tmp = i%100;
-        pwmb.set_ratio(tmp);
-        pwma.set_ratio(tmp);
-        motor_b.forward();
-        motor_a.forward();
-        sensor.cal_theta();
+        float ang = sensor.cal_theta();
 
-	// wait a bit
+            curErr = ang - INIT_ANGLE; //error    
+            SumErr += curErr;
+
+            if (SumErr > SumErrMax) SumErr = SumErrMax;
+            else if (SumErr < SumErrMin) SumErr = SumErrMin;
+
+            //Ki*SumE/(Kp*Fs*X) 
+            integralTerm = SumErr * sensor.delta_ts * Ki / Kp * 10.0; 
+            derivativeTerm = curErr - prevErr;
+
+            if(derivativeTerm > 0.1) derivativeTerm = 0.1;
+            else if (derivativeTerm < -0.1) derivativeTerm = -0.1;
+
+            // Kd(curErr-prevErr)*Ts/(Kp*X)
+            derivativeTerm = derivativeTerm * Kd * sensor.delta_ts / Kp; 
+
+            if(derivativeTerm > 120) derivativeTerm = 120;
+            else if (derivativeTerm < -120) derivativeTerm = -120;
+
+            Cn = (curErr + integralTerm + derivativeTerm) * Kp / 10.0;
+
+            float throttle = abs(long(Cn));
+            cout << "Cn = " << Cn << "throttle = " << throttle << endl;
+
+            if (abs(long(ang)) > 0.7)  //if angle too large to correct, stop motor        
+            {
+                motor_a.stop();
+                motor_b.stop();
+            }
+            else {
+                pwmb.set_ratio(throttle);
+                pwma.set_ratio(throttle);
+                if (Cn >0) {
+                    motor_b.forward();
+                    motor_a.forward();
+                } else {
+                    motor_a.backward();
+                    motor_b.backward();
+                }
+            }
+
+            prevErr = curErr;
+
+
+        // wait a bit
         delay(20);
- 
-        //motor_a.backward();
-        //motor_b.backward();
- 
-	// wait a bit
-	//delay(10);
+
+
+        // wait a bit
+        //delay(10);
     }
 
     motor_a.stop();
     motor_b.stop();
- 
+
     return 0;
 }
+
