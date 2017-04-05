@@ -19,15 +19,15 @@ int main(int argc, char **argv)
 {
     // GPIO pin assignment
     // Test pin 
-    //RPiGPIOPin PIN = RPI_V2_GPIO_P1_37;
+    //RPiGPIOPin PIN = RPI_V2_GPIO_P1_37; // GPIO 26
     // Motor A
-    RPiGPIOPin PWMA = RPI_V2_GPIO_P1_11;
-    RPiGPIOPin AIN2 = RPI_V2_GPIO_P1_13;
-    RPiGPIOPin AIN1 = RPI_V2_GPIO_P1_15;
+    RPiGPIOPin PWMA = RPI_V2_GPIO_P1_11; // GPIO 17
+    RPiGPIOPin AIN2 = RPI_V2_GPIO_P1_13; // GPIO 27
+    RPiGPIOPin AIN1 = RPI_V2_GPIO_P1_15; // GPIO 22
     // Motor B
-    RPiGPIOPin PWMB = RPI_V2_GPIO_P1_29;
-    RPiGPIOPin BIN2 = RPI_V2_GPIO_P1_31;
-    RPiGPIOPin BIN1 = RPI_V2_GPIO_P1_33;
+    RPiGPIOPin PWMB = RPI_V2_GPIO_P1_29; // GPIO 5
+    RPiGPIOPin BIN2 = RPI_V2_GPIO_P1_31; // GPIO 6
+    RPiGPIOPin BIN1 = RPI_V2_GPIO_P1_33; // GPIO 13 
 
     if (!bcm2835_init())
 	return 1;
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     motor_b.init(PWMB, BIN1, BIN2);
     // PWM
     GPIO::PWMOut pwma(17, 100, 0);
-    GPIO::PWMOut pwmb(13, 100, 0);
+    GPIO::PWMOut pwmb(5, 100, 0);
 
     // IMU init
     sensor.calibrate();
@@ -51,20 +51,20 @@ int main(int argc, char **argv)
     for(i=0; i<500; i++)
     {
         int tmp = i%100;
-        pwma.set_ratio(tmp);
         pwmb.set_ratio(tmp);
-        motor_a.forward();
+        pwma.set_ratio(tmp);
         motor_b.forward();
+        motor_a.forward();
         sensor.cal_theta();
 
 	// wait a bit
-        delay(10);
+        delay(20);
  
-        motor_a.backward();
-        motor_b.backward();
+        //motor_a.backward();
+        //motor_b.backward();
  
 	// wait a bit
-	delay(10);
+	//delay(10);
     }
 
     motor_a.stop();
