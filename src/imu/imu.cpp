@@ -24,10 +24,13 @@ imu::~imu() {}
 // Average out measurements of GyroY to get static offset at start position.
 void imu::calibrate() {
 
-    int GYROY_INIT_MEASURE = 50;
-
+    int GYROY_INIT_MEASURE = 20;
+    gyroY_static = 0; 
     for (int i=0;i<GYROY_INIT_MEASURE;i++) {
         gyroY_static += imu_dev->getRotationY();
+        //imu_dev->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+        //cout << ax << "\t" << ay << "\t" << az << "\t" << gx << "\t" << gy << "\t" << gz << endl;
+        //gyroY_static  += gy;
         delay(10);
     }
 
@@ -66,23 +69,22 @@ float imu::cal_theta() {
 
     // Calculate acc theta
     float r = sqrt((float) az * (float) az + (float) ax * (float) ax);
-    float acc_theta = (float) az / r; //approximates sine
-    cout << "acc_theta = " << acc_theta << endl;
+    float acc_theta = (float) -az / r; //approximates sine. 
+    cout << "acc_theta = " << acc_theta;
 
     if (isFirstSample) {
         theta = acc_theta;
         prev_theta = acc_theta;
         isFirstSample = false;
     } else {
-        float degY = ((float) gy - (float) gyroY_static) * delta_ts / 131.0;
-        cout << "degY = " << degY << endl;
+        float degY = ( (float) (gy -  gyroY_static) ) * delta_ts * 3.1415926 / 131.0 / 180.0;
+        cout << "\tdegY = " << degY;
         theta = 0.95 * (prev_theta + degY) + 0.05 * acc_theta;
-        cout << "theta = " << theta << endl;
+        cout << "\ttheta = " << theta;
         prev_theta = theta;
     }
 
-    cout << "degrees = " << theta*180.0/3.1415926 << endl;
-    cout << endl;
+    cout << "\tdegrees = " << theta*180.0/3.1415926 << endl;
     return theta;
 }
 
