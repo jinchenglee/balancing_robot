@@ -13,7 +13,7 @@
 #include "I2Cdev/I2Cdev.h"
 #include "imu/imu.h"
 
-#define ANGLE_BUFFER_LENGTH 1
+#define ANGLE_BUFFER_LENGTH 5
 
 using namespace std;
 
@@ -54,7 +54,8 @@ int main(int argc, char **argv)
     float curErr = 0, prevErr = 0, SumErr = 0;
     float integralTerm = 0, derivativeTerm = 0;
     //float Kp = 30000.0, Ki = 50000.0, Kd = 500.0;
-    float Kp = 60.0, Ki = 100.0, Kd = 1.0;
+    //float Kp = 80.0, Ki = 160.0, Kd = 0.0;
+    float Kp = 90.0, Ki = 180.0, Kd = 1.0;
     float Cn = 0.0;
 
     float angleBuffer[ANGLE_BUFFER_LENGTH];
@@ -85,17 +86,18 @@ int main(int argc, char **argv)
         //
         //ang = a / float(count);
         float ang = sensor.cal_theta();
-        cout << "ang = " << ang << "\t = " << ang*180.0/3.1415 << " degree";
+        //cout << "ang = " << ang << "\t = " << ang*180.0/3.1415 << " degree";
 
 
-        if (ang > 0.7)  //if angle too large to correct, stop motor        
+        if ((ang > 0.7) or (ang < -0.7))  //if angle too large to correct, stop motor        
         {
             motor_a.stop();
             motor_b.stop();
             return 0;
         }
 
-        curErr = ang - INIT_ANGLE; //error    
+        curErr = 6*(ang - INIT_ANGLE); //error    
+        cout << "curErr = " << curErr << "\t = " << curErr*180.0/3.1415 << " degree";
         SumErr += curErr;
 
         if (SumErr > SumErrMax) SumErr = SumErrMax;
@@ -116,11 +118,11 @@ int main(int argc, char **argv)
 
         Cn = (curErr + integralTerm + derivativeTerm) * Kp;
 
-        float throttle = 10*Cn;
+        float throttle = Cn;
         throttle = Cn < 0? -throttle : throttle;
         cout << "\tCn = " << Cn << "\tthrottle = " << throttle << endl;
         cout << endl;
-        if (throttle > 100.) throttle = 100;
+        if (throttle > 100.0) throttle = 100;
 
         pwma.set_ratio(throttle);
         pwmb.set_ratio(throttle);
@@ -136,7 +138,7 @@ int main(int argc, char **argv)
 
 
         // wait a bit
-        delay(20);
+        delay(33);
 
 
         // wait a bit
