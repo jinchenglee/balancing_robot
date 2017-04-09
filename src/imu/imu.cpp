@@ -79,7 +79,7 @@ float imu::cal_theta() {
     } else {
         float degY = ( (float) (gy -  gyroY_static) ) * delta_ts * 3.1415926 / 131.0 / 180.0;
         cout << "\tdegY = " << degY;
-        theta = 0.95 * (prev_theta + degY) + 0.05 * acc_theta;
+        theta = 0.98 * (prev_theta + degY) + 0.02 * acc_theta;
         cout << "\ttheta = " << theta;
         prev_theta = theta;
     }

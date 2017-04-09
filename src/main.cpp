@@ -14,11 +14,25 @@
 #include "imu/imu.h"
 
 #define ANGLE_BUFFER_LENGTH 5
+#define MOTOR_DEAD_ZONE 20 
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
+    float Kp = 80.0, Ki = 130.0, Kd = 0.5;
+
+    if (argc>1) { // User set PID
+        if (argc!=4) {
+            cerr << "Usage: balancing_robot Kp Ki Kd" << endl;
+            return 0;
+        } else {
+            Kp = atof(argv[1]);
+            Ki = atof(argv[2]);
+            Kd = atof(argv[3]);
+            cout << "Kp = " << Kp << " Ki = " << Ki << " Kd = " << Kd << endl;
+        }
+    } 
     // GPIO pin assignment
     // Test pin 
     //RPiGPIOPin PIN = RPI_V2_GPIO_P1_37; // GPIO 26
@@ -53,9 +67,6 @@ int main(int argc, char **argv)
     const float SumErrMin = -3;
     float curErr = 0, prevErr = 0, SumErr = 0;
     float integralTerm = 0, derivativeTerm = 0;
-    //float Kp = 30000.0, Ki = 50000.0, Kd = 500.0;
-    //float Kp = 80.0, Ki = 160.0, Kd = 0.0;
-    float Kp = 90.0, Ki = 180.0, Kd = 1.0;
     float Cn = 0.0;
 
     float angleBuffer[ANGLE_BUFFER_LENGTH];
@@ -66,8 +77,9 @@ int main(int argc, char **argv)
 
 
     // main loop
-    int i=0;
-    for(i=0; i<500; i++)
+    //int i=0;
+    //for(i=0; i<500; i++)
+    while(1)
     {
 
         //int count = 0;
@@ -119,7 +131,7 @@ int main(int argc, char **argv)
         Cn = (curErr + integralTerm + derivativeTerm) * Kp;
 
         float throttle = Cn;
-        throttle = Cn < 0? -throttle : throttle;
+        throttle = Cn < 0? -throttle+MOTOR_DEAD_ZONE : throttle+MOTOR_DEAD_ZONE;
         cout << "\tCn = " << Cn << "\tthrottle = " << throttle << endl;
         cout << endl;
         if (throttle > 100.0) throttle = 100;
@@ -138,7 +150,7 @@ int main(int argc, char **argv)
 
 
         // wait a bit
-        delay(33);
+        delay(30);
 
 
         // wait a bit
