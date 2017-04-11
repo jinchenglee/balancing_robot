@@ -14,13 +14,13 @@
 #include "imu/imu.h"
 
 #define ANGLE_BUFFER_LENGTH 5
-#define MOTOR_DEAD_ZONE 20 
+#define MOTOR_DEAD_ZONE 15 
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
-    float Kp = 80.0, Ki = 130.0, Kd = 0.5;
+    float Kp = 1200.0, Ki = 1100.0, Kd = 5;
 
     if (argc>1) { // User set PID
         if (argc!=4) {
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     // IMU init
     sensor.calibrate();
 
-    const float INIT_ANGLE = 0.11;
+    const float INIT_ANGLE = 0.12;
     const float SumErrMax = 3;
     const float SumErrMin = -3;
     float curErr = 0, prevErr = 0, SumErr = 0;
@@ -85,8 +85,8 @@ int main(int argc, char **argv)
         //int count = 0;
         //float a = 0;
         //float ang = sensor.cal_theta();
-        //a = ang - INIT_ANGLE;
-        //angleBuffer[angleBufferIndex] = a;
+        ////a = ang - INIT_ANGLE;
+        //angleBuffer[angleBufferIndex] = ang;
         //angleBufferIndex = (angleBufferIndex + 1) % ANGLE_BUFFER_LENGTH;
 
         //for (int i = 0; i < ANGLE_BUFFER_LENGTH; i++) {
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
         //
         //ang = a / float(count);
         float ang = sensor.cal_theta();
-        //cout << "ang = " << ang << "\t = " << ang*180.0/3.1415 << " degree";
+        cout << "ang = " << ang << "\t = " << ang*180.0/3.1415 << " degree" << endl;
 
 
         if ((ang > 0.7) or (ang < -0.7))  //if angle too large to correct, stop motor        
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             return 0;
         }
 
-        curErr = 6*(ang - INIT_ANGLE); //error    
+        curErr = (ang - INIT_ANGLE); //error    
         cout << "curErr = " << curErr << "\t = " << curErr*180.0/3.1415 << " degree";
         SumErr += curErr;
 
@@ -131,19 +131,29 @@ int main(int argc, char **argv)
         Cn = (curErr + integralTerm + derivativeTerm) * Kp;
 
         float throttle = Cn;
-        throttle = Cn < 0? -throttle+MOTOR_DEAD_ZONE : throttle+MOTOR_DEAD_ZONE;
+        if (Cn < 0) {
+            throttle = -Cn;
+        }
         cout << "\tCn = " << Cn << "\tthrottle = " << throttle << endl;
         cout << endl;
         if (throttle > 100.0) throttle = 100;
 
-        pwma.set_ratio(throttle);
-        pwmb.set_ratio(throttle);
-        if (Cn >0) {
-            motor_a.forward();
-            motor_b.forward();
+        if (abs(int(throttle))< 0.5) {
+            // Too small error, we ignore and shutdown motors.
+            pwma.set_ratio(0);
+            pwmb.set_ratio(0);
+            motor_a.stop();
+            motor_b.stop();
         } else {
-            motor_a.backward();
-            motor_b.backward();
+            pwma.set_ratio(throttle);
+            pwmb.set_ratio(throttle);
+            if (Cn >0) {
+                motor_a.forward();
+                motor_b.forward();
+            } else {
+                motor_a.backward();
+                motor_b.backward();
+            }
         }
 
         prevErr = curErr;
@@ -152,9 +162,6 @@ int main(int argc, char **argv)
         // wait a bit
         delay(30);
 
-
-        // wait a bit
-        //delay(10);
     }
 
     motor_a.stop();
